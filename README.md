@@ -71,17 +71,35 @@ npm start        # plain node
 Visit `http://localhost:5000` — sign up, upload a file, hit **Share** on a
 file card to get a link + QR code.
 
-## 5. Deploy so it's reachable from other devices
+## 5. Push to GitHub
+
+This folder already has git initialized with everything committed
+(`.env` and `node_modules` are excluded via `.gitignore` — safe to push).
+Just point it at a new empty GitHub repo:
+
+```bash
+git remote add origin https://github.com/<your-username>/<your-repo>.git
+git branch -M main
+git push -u origin main
+```
+
+(Create the empty repo on github.com first — don't initialize it with a
+README/license there, since this folder already has its own history.)
+
+## 6. Deploy so it's reachable from other devices
 
 Any Node host works since this is a single Express server (API + frontend
 together) — no separate frontend deploy needed. Easy free-tier options:
 
-- **Render** — New → Web Service → connect your repo → build command
-  `npm install`, start command `npm start` → add the `.env` variables
-  in the dashboard (`MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRE`,
-  `CLOUDINARY_CLOUD_NAME`/`CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET`,
-  `MAX_FILE_SIZE`). No disk/volume config needed — files go to Cloudinary,
-  not Render's disk, so they survive restarts and redeploys.
+- **Render** — New → **Blueprint** → connect your GitHub repo → Render
+  reads `render.yaml` in this folder and pre-fills the service. You'll
+  just need to fill in the blanks it asks for: `MONGODB_URI`,
+  `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+  (JWT_SECRET is auto-generated). No disk/volume config needed — files go
+  to Cloudinary, not Render's disk, so they survive restarts and redeploys.
+  (No `render.yaml`/Blueprint access? New → Web Service → connect repo →
+  build command `npm install`, start command `npm start` → add the same
+  env vars manually in the dashboard.)
 - **Railway** — similar: connect repo, add env vars, deploy.
 
 Once deployed, `MONGODB_URI` should point at your Atlas cluster (not
