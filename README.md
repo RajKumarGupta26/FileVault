@@ -142,7 +142,7 @@ Auth uses `Authorization: Bearer <token>`.
   same file-info-and-download view without needing the URL or a QR scanner.
   Code lookups are rate-limited (30 per 10 min per IP) since a 6-digit
   space is small enough to matter for brute-forcing.
-- Storage is capped per user (1 GB) and per file (50 MB) — both configurable
+- Storage is capped per user (1 GB) and per file (250 MB) — both configurable
   via `.env`.
 
 ## Known limitations (intentional, for a student/demo project)

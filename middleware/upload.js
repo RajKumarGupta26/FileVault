@@ -7,7 +7,7 @@ const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
-  limits: { fileSize: Number(process.env.MAX_FILE_SIZE) || 52428800 } // 50MB default
+  limits: { fileSize: Number(process.env.MAX_FILE_SIZE) || 262144000 } // 250MB default
 });
 
 module.exports = { upload };

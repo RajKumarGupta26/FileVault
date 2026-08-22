@@ -5,7 +5,7 @@ const $ = (sel, root=document) => root.querySelector(sel);
 const API = '/api';
 const TOKEN_KEY = 'filevault_token';
 const USER_KEY = 'filevault_user';
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 250 * 1024 * 1024;
 
 /* ===================== Helpers ===================== */
 function toast(msg, isErr=false){
@@ -159,7 +159,7 @@ async function handleFiles(fileList){
   let anyValid = false;
   for (const file of Array.from(fileList)){
     if (file.size > MAX_FILE_SIZE){
-      toast(`"${file.name}" exceeds the 50 MB limit.`, true);
+      toast(`"${file.name}" exceeds the 250 MB limit.`, true);
       continue;
     }
     form.append('files', file);
