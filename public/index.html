@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileVault — Secure File Sharing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body data-theme="dark">
+
+<div id="toast-stack"></div>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div id="auth-screen" class="hidden">
+  <div class="vault-wrap">
+    <div class="vault-form">
+      <div class="brand"><div class="brand-mark">FV</div><div class="brand-name">FileVault</div></div>
+      <h1 id="auth-title">Welcome back</h1>
+      <p class="sub" id="auth-sub">Enter your credentials to open the vault.</p>
+
+      <form id="auth-form" class="form-stack">
+        <div>
+          <label class="field-label" for="in-name">Name</label>
+          <input class="field" id="in-name" autocomplete="name" placeholder="Ada Lovelace">
+        </div>
+        <div>
+          <label class="field-label" for="in-pass">Password</label>
+          <input class="field" id="in-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <div class="form-error" id="auth-error"></div>
+        <button type="submit" class="btn btn-primary" id="auth-submit">Unlock vault</button>
+      </form>
+      <div class="form-toggle">
+        <span id="toggle-caption">New here?</span> <button id="toggle-mode">Create an account</button>
+      </div>
+      <div class="form-toggle">
+        Received a file? <button id="open-code-entry-auth">Enter access code</button>
+      </div>
+    </div>
+    <div class="vault-visual">
+      <div class="dial" id="dial">
+        <div class="dial-core"><span id="dial-glyph">FV</span></div>
+      </div>
+      <div class="vault-caption">JWT-secured • cross-device</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SCREEN ============ -->
+<div id="app-screen" class="hidden">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">FV</div><div class="brand-name">FileVault</div></div>
+    <nav class="side-nav">
+      <div class="side-link active">🗄️ &nbsp;My Files</div>
+    </nav>
+    <div class="quota">
+      <div class="quota-label" id="quota-text">0 MB of 1 GB used</div>
+      <div class="quota-bar"><div class="quota-fill" id="quota-fill" style="width:0%"></div></div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <h2 id="greeting">Vault</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="open-code-entry-app">🔢 Enter code</button>
+        <button class="icon-btn" id="theme-toggle" title="Toggle theme">🌓</button>
+        <button class="btn btn-ghost" id="logout-btn">Sign out</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="dropzone" id="dropzone">
+        <div class="slot-icon">⭳</div>
+        <h3>Deposit a file</h3>
+        <p>Drag & drop, or click to browse. Max 50 MB per file.</p>
+        <input type="file" id="file-input" class="hidden" multiple>
+        <button class="btn btn-primary" id="browse-btn">Choose files</button>
+      </div>
+
+      <div class="grid-head"><h3>Stored files</h3></div>
+      <div class="file-grid" id="file-grid"></div>
+      <div class="empty-state hidden" id="empty-state">
+        <div class="glyph">🗃️</div>
+        <div>Nothing in the vault yet — deposit your first file above.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PUBLIC SHARE SCREEN ============ -->
+<div id="share-screen" class="hidden">
+  <div class="share-card" id="share-card"></div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
