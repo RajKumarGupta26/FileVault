@@ -52,7 +52,7 @@ async function serveDownload(file, req, res) {
 // GET /api/share/:shareId  — metadata only, no auth
 exports.getSharedFileInfo = async (req, res, next) => {
   try {
-    const { file, reason } = await findActiveShare({ shareId: req.params.shareId });
+    const { file, reason } = await findActiveShare({ shareId: req.params.shareId }, true);
     if (!file) return res.status(404).json({ success: false, message: notFoundMessage(reason) });
     res.json({ success: true, data: await buildInfoPayload(file) });
   } catch (err) {
@@ -77,7 +77,7 @@ exports.downloadSharedFile = async (req, res, next) => {
 exports.getSharedFileInfoByCode = async (req, res, next) => {
   try {
     const code = String(req.params.code).trim();
-    const { file, reason } = await findActiveShare({ shareCode: code });
+    const { file, reason } = await findActiveShare({ shareCode: code }, true);
     if (!file) return res.status(404).json({ success: false, message: reason ? notFoundMessage(reason) : 'No file found for that code' });
     res.json({ success: true, data: await buildInfoPayload(file) });
   } catch (err) {

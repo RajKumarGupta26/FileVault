@@ -142,6 +142,18 @@ const dropzone = $('#dropzone');
 const fileInput = $('#file-input');
 $('#browse-btn').addEventListener('click', ()=> fileInput.click());
 dropzone.addEventListener('click', (e)=>{ if (e.target.id==='browse-btn') return; fileInput.click(); });
+
+document.addEventListener('keydown', (e)=>{
+  const typingInField = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u' && !typingInField){
+    e.preventDefault();
+    if (!document.getElementById('app-screen')?.classList.contains('hidden')) fileInput.click();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
+    e.preventDefault();
+    openCodeEntryModal();
+  }
+});
 fileInput.addEventListener('change', ()=> handleFiles(fileInput.files));
 
 ['dragenter','dragover'].forEach(evt=>{
@@ -168,13 +180,103 @@ async function handleFiles(fileList){
   fileInput.value = '';
   if (!anyValid) return;
 
+  const progressWrap = showUploadProgress();
   try {
-    await api('/files/upload', { method:'POST', body: form, isForm:true });
+    await uploadWithProgress(form, progressWrap.setPercent);
+    progressWrap.done();
     toast('Files deposited.');
     refreshGrid();
   } catch (err) {
-    toast(err.message, true);
+    progressWrap.remove();
+    toast(err.message || 'Upload failed', true);
   }
+}
+
+function uploadWithProgress(form, onProgress){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API}/files/upload`);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + getToken());
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    });
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else {
+        let msg = 'Upload failed';
+        try { msg = JSON.parse(xhr.responseText).message || msg; } catch {}
+        reject(new Error(msg));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.send(form);
+  });
+}
+
+function showUploadProgress(){
+  const el = document.createElement('div');
+  el.className = 'upload-progress';
+  el.innerHTML = `
+    <div class="upload-progress-label">Uploading… <span class="pct">0%</span></div>
+    <div class="upload-progress-bar"><div class="upload-progress-fill" style="width:0%"></div></div>
+  `;
+  dropzone.parentElement.insertBefore(el, dropzone.nextSibling);
+  const fill = el.querySelector('.upload-progress-fill');
+  const pct = el.querySelector('.pct');
+  return {
+    setPercent(p){ fill.style.width = p + '%'; pct.textContent = p + '%'; },
+    done(){ setTimeout(() => el.remove(), 600); },
+    remove(){ el.remove(); }
+  };
+}
+
+let storageChartInstance = null;
+function categorize(mimeType){
+  if (!mimeType) return 'Other';
+  if (mimeType.startsWith('image/')) return 'Images';
+  if (mimeType.startsWith('video/')) return 'Videos';
+  if (mimeType === 'application/pdf' || mimeType.includes('word') || mimeType.includes('document') || mimeType.startsWith('text/')) return 'Documents';
+  return 'Other';
+}
+function renderStorageChart(files){
+  const canvas = $('#storage-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const buckets = { Documents: 0, Images: 0, Videos: 0, Other: 0 };
+  files.forEach(f => { buckets[categorize(f.mimeType)] += f.size; });
+
+  const labels = Object.keys(buckets).filter(k => buckets[k] > 0);
+  const data = labels.map(k => buckets[k]);
+  const colors = { Documents: '#2a78d6', Images: '#eb6834', Videos: '#1baf7a', Other: '#eda100' };
+
+  if (storageChartInstance) storageChartInstance.destroy();
+
+  if (!labels.length){
+    canvas.style.display = 'none';
+    return;
+  }
+  canvas.style.display = 'block';
+
+  storageChartInstance = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: labels.map(l => colors[l]),
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${formatBytes(ctx.raw)}` } }
+      }
+    }
+  });
 }
 
 /* ===================== Dashboard ===================== */
@@ -201,13 +303,14 @@ async function refreshGrid(){
   const used = files.reduce((s,f)=>s+f.size,0);
   $('#quota-text').textContent = `${formatBytes(used)} of 1 GB used`;
   $('#quota-fill').style.width = Math.min(100, (used/(1024*1024*1024))*100) + '%';
+  renderStorageChart(files);
 
   files.forEach(f=>{
     const card = document.createElement('div');
     card.className = 'file-card';
     card.innerHTML = `
       <div class="file-top">
-        <div class="file-icon">${fileGlyph(f.mimeType)}</div>
+        <div class="file-icon">${f.thumbnailUrl ? `<img src="${f.thumbnailUrl}" alt="" class="file-thumb">` : fileGlyph(f.mimeType)}</div>
         <div>
           <div class="file-name">${escapeHtml(f.originalName)}</div>
           <div class="file-meta mono">${formatBytes(f.size)} · ${formatDate(f.createdAt)}</div>

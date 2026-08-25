@@ -5,6 +5,13 @@ const File = require('../models/File');
 const User = require('../models/User');
 const { uploadBufferToCloudinary, deleteFromCloudinary, pipeCloudFileToResponse } = require('../utils/cloudFile');
 
+function thumbnailUrl(f) {
+  if (!f.mimeType || !f.mimeType.startsWith('image/') || !f.cloudUrl) return null;
+  // Insert a resize/crop transformation into the Cloudinary delivery URL
+  // so file cards load a small thumbnail instead of the full-size image.
+  return f.cloudUrl.replace('/upload/', '/upload/w_200,h_150,c_fill,q_auto/');
+}
+
 function fileToJSON(f) {
   return {
     id: f._id,
@@ -12,6 +19,7 @@ function fileToJSON(f) {
     mimeType: f.mimeType,
     size: f.size,
     createdAt: f.createdAt,
+    thumbnailUrl: thumbnailUrl(f),
     shareId: f.shareId || null,
     shareCode: f.shareCode || null,
     shareExpires: f.shareExpires,
