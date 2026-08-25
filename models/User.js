@@ -19,6 +19,13 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: null,
+    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email']
+  },
   password: {
     type: String,
     required: [true, 'Please provide a password'],
@@ -27,6 +34,8 @@ const userSchema = new mongoose.Schema({
   },
   storageUsed: { type: Number, default: 0 },
   storageLimit: { type: Number, default: 1024 * 1024 * 1024 }, // 1GB
+  resetPasswordToken: { type: String, default: null, select: false },
+  resetPasswordExpires: { type: Date, default: null, select: false },
   createdAt: { type: Date, default: Date.now }
 });
 

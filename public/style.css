@@ -118,6 +118,7 @@ label.field-label{font-size:12px; text-transform:uppercase; letter-spacing:.08em
 .upload-progress-bar{ height:6px; border-radius:4px; background:rgba(255,255,255,0.08); overflow:hidden; }
 .upload-progress-fill{ height:100%; background:var(--brass,#c9a15a); transition:width .2s ease; }
 .file-thumb{ width:100%; height:100%; object-fit:cover; border-radius:8px; }
+.link-btn{ background:none; border:none; padding:0; color:var(--accent,#5fc9d6); cursor:pointer; text-decoration:underline; }
 .qr-box img{display:block; width:148px; height:148px;}
 .link-row{display:flex; gap:8px; align-items:center;}
 .link-row input{flex:1;}

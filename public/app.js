@@ -78,10 +78,12 @@ const dial = $('#dial');
 function setAuthMode(mode){
   authMode = mode;
   $('#auth-title').textContent = mode==='login' ? 'Welcome back' : 'Open a new vault';
-  $('#auth-sub').textContent = mode==='login' ? 'Enter your credentials to open the vault.' : 'Choose a name and password to get started.';
+  $('#auth-sub').textContent = mode==='login' ? 'Enter your credentials to open the vault.' : 'Choose a name, email, and password to get started.';
   $('#auth-submit').textContent = mode==='login' ? 'Unlock vault' : 'Create vault';
   $('#toggle-caption').textContent = mode==='login' ? 'New here?' : 'Already have a vault?';
   $('#toggle-mode').textContent = mode==='login' ? 'Create an account' : 'Sign in instead';
+  $('#email-field-wrap').classList.toggle('hidden', mode!=='signup');
+  $('#forgot-password-link').classList.toggle('hidden', mode!=='login');
   $('#auth-error').textContent = '';
 }
 $('#toggle-mode').addEventListener('click', ()=> setAuthMode(authMode==='login' ? 'signup' : 'login'));
@@ -98,15 +100,18 @@ authForm.addEventListener('submit', async (e)=>{
   errEl.textContent = '';
   const name = $('#in-name').value.trim();
   const password = $('#in-pass').value;
+  const email = $('#in-email').value.trim();
 
   if (!name || !password){ errEl.textContent = 'Please fill in both fields.'; return; }
+  if (authMode === 'signup' && !email){ errEl.textContent = 'Email is required to create a vault.'; return; }
 
   const submitBtn = $('#auth-submit');
   submitBtn.disabled = true;
   try {
+    const body = authMode === 'signup' ? { name, email, password } : { name, password };
     const data = await api(authMode === 'signup' ? '/auth/signup' : '/auth/login', {
       method: 'POST',
-      body: { name, password }
+      body
     });
     setSession(data.token, data.user);
     playDial(()=>{
@@ -126,6 +131,111 @@ $('#logout-btn').addEventListener('click', ()=>{
   showAuth();
   toast('Signed out.');
 });
+
+/* ===================== Forgot / reset password ===================== */
+const forgotLink = $('#forgot-password-link');
+if (forgotLink) forgotLink.addEventListener('click', openForgotPasswordModal);
+
+function openForgotPasswordModal(){
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal">
+      <div class="seal">🔑</div>
+      <h3 style="text-align:center">Reset your password</h3>
+      <p class="sub" style="text-align:center">We'll email you a link to set a new password.</p>
+      <label class="field-label" for="forgot-email">Email</label>
+      <input class="field" id="forgot-email" type="email" placeholder="ada@example.com" autofocus>
+      <div class="form-error" id="forgot-error" style="margin-top:8px;"></div>
+      <div class="modal-row" style="margin-top:18px;">
+        <button class="btn btn-ghost" id="forgot-cancel">Cancel</button>
+        <button class="btn btn-primary" id="forgot-submit">Send reset link</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+  const input = $('#forgot-email', backdrop);
+  input.focus();
+
+  async function submit(){
+    const email = input.value.trim();
+    const errEl = $('#forgot-error', backdrop);
+    errEl.textContent = '';
+    if (!email){ errEl.textContent = 'Enter your email.'; return; }
+
+    const btn = $('#forgot-submit', backdrop);
+    btn.disabled = true;
+    try {
+      const data = await api('/auth/forgot-password', { method: 'POST', body: { email } });
+      backdrop.remove();
+      toast(data.message || 'If an account exists for that email, a reset link has been sent.');
+    } catch (err) {
+      errEl.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  $('#forgot-submit', backdrop).addEventListener('click', submit);
+  input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') submit(); });
+  $('#forgot-cancel', backdrop).addEventListener('click', ()=> backdrop.remove());
+  backdrop.addEventListener('click', (e)=>{ if (e.target===backdrop) backdrop.remove(); });
+}
+
+// If we've landed on /reset-password?token=... (from the emailed link),
+// show a dedicated screen to set a new password instead of the normal app.
+function checkResetPasswordRoute(){
+  if (location.pathname !== '/reset-password') return false;
+  const token = new URLSearchParams(location.search).get('token');
+  if (!token) return false;
+  renderResetPasswordScreen(token);
+  return true;
+}
+
+function renderResetPasswordScreen(token){
+  document.getElementById('auth-screen')?.classList.add('hidden');
+  document.getElementById('app-screen')?.classList.add('hidden');
+
+  const wrap = document.createElement('div');
+  wrap.id = 'reset-password-screen';
+  wrap.className = 'vault-wrap';
+  wrap.innerHTML = `
+    <div class="vault-form">
+      <div class="brand"><div class="brand-mark">FV</div><div class="brand-name">FileVault</div></div>
+      <h1>Set a new password</h1>
+      <p class="sub">Choose a new password for your vault.</p>
+      <div class="form-stack">
+        <div>
+          <label class="field-label" for="reset-pass">New password</label>
+          <input class="field" id="reset-pass" type="password" placeholder="••••••••" autofocus>
+        </div>
+        <div class="form-error" id="reset-error"></div>
+        <button class="btn btn-primary" id="reset-submit">Update password</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  $('#reset-submit', wrap).addEventListener('click', async ()=>{
+    const password = $('#reset-pass', wrap).value;
+    const errEl = $('#reset-error', wrap);
+    errEl.textContent = '';
+    if (!password || password.length < 6){ errEl.textContent = 'Password must be at least 6 characters.'; return; }
+
+    const btn = $('#reset-submit', wrap);
+    btn.disabled = true;
+    try {
+      const data = await api('/auth/reset-password', { method: 'POST', body: { token, password } });
+      setSession(data.token, data.user);
+      wrap.remove();
+      history.pushState({}, '', '/');
+      enterApp();
+      toast('Password updated — welcome back.');
+    } catch (err) {
+      errEl.textContent = err.message;
+      btn.disabled = false;
+    }
+  });
+}
 
 /* ===================== Theme ===================== */
 function applyTheme(t){
@@ -633,6 +743,7 @@ function boot(){
     renderShareScreen(shareMatch[1]);
     return;
   }
+  if (checkResetPasswordRoute()) return;
   const token = getToken();
   const user = getStoredUser();
   if (token && user) enterApp(); else showAuth();

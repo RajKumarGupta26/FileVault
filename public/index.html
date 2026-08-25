@@ -26,9 +26,16 @@
           <label class="field-label" for="in-name">Name</label>
           <input class="field" id="in-name" autocomplete="name" placeholder="Ada Lovelace">
         </div>
+        <div id="email-field-wrap" class="hidden">
+          <label class="field-label" for="in-email">Email</label>
+          <input class="field" id="in-email" type="email" autocomplete="email" placeholder="ada@example.com">
+        </div>
         <div>
           <label class="field-label" for="in-pass">Password</label>
           <input class="field" id="in-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <div id="forgot-password-link" class="hidden" style="text-align:right; margin-top:-8px;">
+          <button type="button" class="link-btn" style="font-size:12px;">Forgot password?</button>
         </div>
         <div class="form-error" id="auth-error"></div>
         <button type="submit" class="btn btn-primary" id="auth-submit">Unlock vault</button>

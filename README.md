@@ -110,9 +110,11 @@ scan the QR from any phone and it'll open and download the file for real.
 
 | Method | Route | Auth | Purpose |
 |---|---|---|---|
-| POST | `/api/auth/signup` | — | `{name, password}` → token + user |
+| POST | `/api/auth/signup` | — | `{name, email, password}` → token + user |
 | POST | `/api/auth/login` | — | `{name, password}` → token + user |
 | GET | `/api/auth/me` | ✓ | current user + storage usage |
+| POST | `/api/auth/forgot-password` | — | `{email}` → emails a reset link (always returns a generic message) |
+| POST | `/api/auth/reset-password` | — | `{token, password}` → token + user, sets a new password |
 | GET | `/api/files` | ✓ | list your files |
 | POST | `/api/files/upload` | ✓ | multipart, field `files` (up to 10) |
 | GET | `/api/files/:id/download` | ✓ | download your own file |
